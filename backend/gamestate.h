@@ -1,3 +1,17 @@
+#include "bomb.h"
+#include "map.h"
+
+typedef struct Player{
+  int max_bomb_num;
+  int curr_bomb_num;
+  int pos_x;
+  int pos_y;
+  Bomb* bomb_state;
+}Player;
+
 typedef struct GameState{
-  int dummy;
+  //at start malloc memory for x players
+  //whenever player connects create new player
+  Player** player_list;
+  Map* map;
 }GameState;
