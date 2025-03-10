@@ -1,3 +1,6 @@
+#ifndef GAMESTATE_H
+#define GAMESTATE_H
+
 #include "bomb.h"
 #include "map.h"
 
@@ -12,6 +15,7 @@ typedef struct Player{
 typedef struct GameState{
   //at start malloc memory for x players
   //whenever player connects create new player
-  Player** player_list;
-  Map* map;
+  int dummy;
 }GameState;
+
+#endif

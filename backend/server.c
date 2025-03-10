@@ -1,4 +1,6 @@
-#include "gamestate.h"
+#include "../common/gamestate.h"
+#include "../common/player_move.h"
+#include "state_updater.h"
 #include <netinet/in.h>
 #include <stdio.h>
 #include <arpa/inet.h>
@@ -8,27 +10,80 @@
 #include <pthread.h>
 
 #define PORT 50000
-#define MAX_CLIENTS 10
+#define MAX_PLAYERS 10
 #define BUFFER_SIZE 1024
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-GameState gs = {1};
+pthread_mutex_t gs_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t cl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void *handle_client(void *arg)
-{
-  int client_socket = *(int *)arg;
+GameState gs;
+int client_list[MAX_PLAYERS];
+int num_clients = 0;
+
+void add_client(int client_socket){
+  pthread_mutex_lock(&cl_mutex);
+  if(num_clients < MAX_PLAYERS){
+    client_list[num_clients] = client_socket;
+    num_clients++;
+  }
+  else{
+    close(client_socket);
+  }
+  pthread_mutex_unlock(&cl_mutex);
+}
+
+void remove_client(int client_socket){
+  pthread_mutex_lock(&cl_mutex);
+    for (int i = 0; i < num_clients; i++) {
+        if (client_list[i] == client_socket) {
+            client_list[i] = client_list[num_clients - 1];
+            num_clients--;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&cl_mutex);
+}
+
+void *game_loop(void *arg) {
+    (void)arg; // argument nie jest używany
+    
+    while (1) {
+        GameState snapshot = gs;
+        pthread_mutex_lock(&cl_mutex);
+        for (int i = 0; i < num_clients; i++) {
+            if (send(client_list[i],&snapshot , sizeof(snapshot), 0) < 0) {
+                printf("użytkownik się rozłączył");
+                close(client_list[i]);
+                remove_client(client_list[i]);
+                i--;
+            }
+        }
+        pthread_mutex_unlock(&cl_mutex);
+        // Tick co około 16ms (~60 FPS)
+        usleep(16000);
+    }
+    return NULL;
+}
+
+void* client_handler(void* arg){
+  int client_socket = *(int*) arg;
   free(arg);
-  pthread_mutex_lock(&mutex);
-  gs.dummy++;
-  pthread_mutex_unlock(&mutex);
-  char message[BUFFER_SIZE];
-  sprintf(message, "Wartość zmiennej dummy w gamestate wynosi: %d\n", gs.dummy);
-
-  send(client_socket, message, strlen(message), 0);
-
-  close(client_socket);
+  PlayerMove buffer;
+  while(1){
+    int bytes_read = recv(client_socket, &buffer, sizeof(buffer), 0);
+    if(bytes_read <= 0){
+      printf("Klient rozłączony");
+      close(client_socket);
+      remove_client(client_socket);
+      break;
+    }
+    pthread_mutex_lock(&gs_mutex);
+    update_gamestate(&buffer, &gs);
+    pthread_mutex_unlock(&gs_mutex);
+  }
   return NULL;
 }
+
 
 int main()
 {
@@ -72,6 +127,13 @@ int main()
   listen(server_socket, 5);
   printf("Serwer nasłuchuje na porcie %d...\n", PORT);
 
+  //create main thread of game_loop
+  pthread_t game_thread;
+  if (pthread_create(&game_thread, NULL, game_loop, NULL) != 0) {
+    printf("there was an error creating game loop thread"); 
+    exit(EXIT_FAILURE);
+  }
+
   int *client_socket;
   while (1)
   {
@@ -91,14 +153,16 @@ int main()
       printf("Wystąpił błąd w accept");
       continue;
     }
-    pthread_t thread_id;
-    if (pthread_create(&thread_id, NULL, handle_client, client_socket) != 0)
+    add_client(*client_socket);
+    pthread_t tid;
+    if(pthread_create(&tid, NULL, client_handler, client_socket) != 0)
     {
-      printf("Wystąpił błąd przy tworzeniu wątku...");
+      printf("There was an error creating client thread");
       free(client_socket);
       continue;
     }
-    printf("Przyjęto klienta.\n");
+    printf("Nowy klient połączony");
+    pthread_detach(tid);
   }
   free(client_socket);
   close(server_socket);

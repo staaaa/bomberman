@@ -7,7 +7,7 @@ enum TileType{
 typedef struct Tile{
   int x;
   int y;
-  TileType type;
+  enum TileType type;
 }Tile;
 
 typedef struct Map{
