@@ -5,13 +5,14 @@
 #include <string.h>
 #include <unistd.h>
 
-
 #define BUFFER_SIZE 1024
 
-//address is first, port is second
-int main(int argc, char *argv[]){
+// address is first, port is second
+int main(int argc, char *argv[])
+{
 
-  if(argc != 3){
+  if (argc != 3)
+  {
     printf("Nie podano adresu ip albo portu, konczenie programu...");
     exit(1);
   }
@@ -21,23 +22,26 @@ int main(int argc, char *argv[]){
   char buffer[BUFFER_SIZE];
   struct sockaddr_in server_addr;
 
-  //if we are opening client on the same machine as server then pass 0 as server ip
-  if(*argv[1] == '0'){
+  // if we are opening client on the same machine as server then pass 0 as server ip
+  if (*argv[1] == '0')
+  {
     server_addr.sin_addr.s_addr = INADDR_ANY;
   }
-  else{
-    if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0) {
-        perror("Błąd konwersji adresu IP");
-        close(client_socket);
-        exit(EXIT_FAILURE);
+  else
+  {
+    if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0)
+    {
+      perror("Błąd konwersji adresu IP");
+      close(client_socket);
+      exit(EXIT_FAILURE);
     }
   }
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(atoi(argv[2]));
   memset(server_addr.sin_zero, '\0', sizeof(server_addr.sin_zero));
-  
 
-  if(connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
+  if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+  {
     printf("wystąpił błąd połączenia z serwerem...");
     close(client_socket);
     exit(EXIT_FAILURE);
@@ -45,10 +49,12 @@ int main(int argc, char *argv[]){
 
   printf("Połączono z serwerem.");
   bytes_recived = recv(client_socket, buffer, BUFFER_SIZE - 1, 0);
-  if(bytes_recived < 0){
+  if (bytes_recived < 0)
+  {
     printf("Wystąpił błąd odbioru danych");
   }
-  else {
+  else
+  {
     buffer[bytes_recived] = '\0';
     printf("Otrzymano od serwera: %s", buffer);
   }
