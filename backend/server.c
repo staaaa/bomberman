@@ -130,7 +130,7 @@ int main()
   //create main thread of game_loop
   pthread_t game_thread;
   if (pthread_create(&game_thread, NULL, game_loop, NULL) != 0) {
-    printf("there was an error creating game loop thread"); 
+    printf("there was an error creating game loop thread\n"); 
     exit(EXIT_FAILURE);
   }
 
@@ -142,7 +142,7 @@ int main()
 
     if (!client_socket)
     {
-      printf("Wystąpił bład w alokacji deskryptoru socketu klienta");
+      printf("Wystąpił bład w alokacji deskryptoru socketu klienta\n");
       continue;
     }
 
@@ -150,18 +150,18 @@ int main()
     *client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &clilen);
     if (*client_socket < 0)
     {
-      printf("Wystąpił błąd w accept");
+      printf("Wystąpił błąd w accept\n");
       continue;
     }
     add_client(*client_socket);
     pthread_t tid;
     if(pthread_create(&tid, NULL, client_handler, client_socket) != 0)
     {
-      printf("There was an error creating client thread");
+      printf("There was an error creating client thread\n");
       free(client_socket);
       continue;
     }
-    printf("Nowy klient połączony");
+    printf("Nowy klient połączony\n");
     pthread_detach(tid);
   }
   free(client_socket);
