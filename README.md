@@ -1,6 +1,6 @@
 # Bombmerman
 
-Simple bombmerman game that can be hosted by lightweight C TCP server.
+Simple bomberman game that can be hosted by lightweight C TCP server.
 Made as an university project for Distributed Systems course at Gdańsk University of Technology at 2025.
 
 ## Dependencies & Requirements
