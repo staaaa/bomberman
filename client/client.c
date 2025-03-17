@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        printf("Nie podano adresu ip albo portu, konczenie programu...");
+        printf("Nie podano adresu ip albo portu, konczenie programu...\n");
         exit(1);
     }
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     {
         if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0)
         {
-            perror("Błąd konwersji adresu IP");
+            perror("Błąd konwersji adresu IP\n");
             close(client_socket);
             exit(EXIT_FAILURE);
         }
@@ -44,12 +44,12 @@ int main(int argc, char *argv[])
 
     if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
-        printf("wystąpił błąd połączenia z serwerem...");
+        printf("wystąpił błąd połączenia z serwerem...\n");
         close(client_socket);
         exit(EXIT_FAILURE);
     }
 
-    printf("Połączono z serwerem.");
+    printf("Połączono z serwerem.\n");
     pthread_t recv_thread, send_thread;
     pthread_create(&recv_thread, NULL, receive_data, &client_socket);
     pthread_create(&send_thread, NULL, send_data, &client_socket);

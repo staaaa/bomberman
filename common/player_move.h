@@ -10,7 +10,7 @@ enum MoveType{
 typedef struct PlayerMove{
   enum MoveType move_type;
   int pos_x;
-  int pox_y;
+  int pos_y;
 }PlayerMove;
 
 #endif

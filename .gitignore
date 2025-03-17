@@ -1,4 +1,8 @@
 .DS_Store
 *.out
 .vscode/
+<<<<<<< HEAD
 build/*
+=======
+build/*
+>>>>>>> feat/add-cmake
