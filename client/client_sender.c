@@ -39,7 +39,7 @@ void *send_data(void *arg)
         {
             if (send(client_socket, &move, sizeof(move), 0) <= 0)
             {
-                printw("Błąd podczas wysyłania danych.\n");
+                printw("Błąd podczas wysyłania danych. \n");
                 break;
             }
             last_move_type = move.move_type;

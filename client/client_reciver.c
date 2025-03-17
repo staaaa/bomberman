@@ -16,7 +16,7 @@ void *receive_data(void *arg)
     bytes_recived = recv(client_socket, &buffer, sizeof(buffer), 0);
     if (bytes_recived <= 0)
     {
-      printf("Wystąpił błąd odbioru danych\n");
+      printf("Wystąpił błąd odbioru danych. \n");
       break;
     }
     else

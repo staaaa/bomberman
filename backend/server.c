@@ -52,7 +52,7 @@ void *game_loop(void *arg) {
         pthread_mutex_lock(&cl_mutex);
         for (int i = 0; i < num_clients; i++) {
             if (send(client_list[i],&snapshot , sizeof(snapshot), 0) < 0) {
-                printf("użytkownik się rozłączył");
+                printf("Klient się rozłączył. \n");
                 close(client_list[i]);
                 remove_client(client_list[i]);
                 i--;
@@ -72,7 +72,7 @@ void* client_handler(void* arg){
   while(1){
     int bytes_read = recv(client_socket, &buffer, sizeof(buffer), 0);
     if(bytes_read <= 0){
-      printf("Klient rozłączony");
+      printf("Klient rozłączony. \n");
       close(client_socket);
       remove_client(client_socket);
       break;
@@ -97,7 +97,7 @@ int main()
   int server_socket = socket(AF_INET, SOCK_STREAM, 0);
   if (server_socket < 0)
   {
-    printf("Couldn't create a server socket. Exiting app...");
+    printf("Couldn't create a server socket. Exiting app... \n");
     exit(1);
   }
 
@@ -130,7 +130,7 @@ int main()
   //create main thread of game_loop
   pthread_t game_thread;
   if (pthread_create(&game_thread, NULL, game_loop, NULL) != 0) {
-    printf("there was an error creating game loop thread\n"); 
+    printf("there was an error creating game loop thread. \n"); 
     exit(EXIT_FAILURE);
   }
 
@@ -142,7 +142,7 @@ int main()
 
     if (!client_socket)
     {
-      printf("Wystąpił bład w alokacji deskryptoru socketu klienta\n");
+      printf("Wystąpił bład w alokacji deskryptoru socketu klienta. \n");
       continue;
     }
 
@@ -150,18 +150,18 @@ int main()
     *client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &clilen);
     if (*client_socket < 0)
     {
-      printf("Wystąpił błąd w accept\n");
+      printf("Wystąpił błąd w accept. \n");
       continue;
     }
     add_client(*client_socket);
     pthread_t tid;
     if(pthread_create(&tid, NULL, client_handler, client_socket) != 0)
     {
-      printf("There was an error creating client thread\n");
+      printf("There was an error creating client thread. \n");
       free(client_socket);
       continue;
     }
-    printf("Nowy klient połączony\n");
+    printf("Nowy klient połączony. \n");
     pthread_detach(tid);
   }
   free(client_socket);
