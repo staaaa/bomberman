@@ -22,10 +22,20 @@ int num_clients = 0;
 
 void add_client(int client_socket){
   pthread_mutex_lock(&cl_mutex);
-  if(num_clients < MAX_PLAYERS){
-    client_list[num_clients] = client_socket;
-    num_clients++;
-  }
+  if (num_clients < MAX_PLAYERS) {
+        // sending specific data to client when connected
+        client_list[num_clients] = client_socket;
+
+        gs.players[num_clients].id = num_clients;
+        gs.players[num_clients].pos_x = 100;
+        gs.players[num_clients].pos_y = 100;
+        gs.num_players = num_clients + 1;
+
+        int player_id = num_clients;
+        send(client_socket, &player_id, sizeof(player_id), 0);
+        
+        num_clients++;
+    }
   else{
     close(client_socket);
   }
@@ -48,14 +58,23 @@ void *game_loop(void *arg) {
     (void)arg; // argument nie jest używany
     
     while (1) {
-        GameState snapshot = gs;
         pthread_mutex_lock(&cl_mutex);
+        int num_players = gs.num_players;
+
         for (int i = 0; i < num_clients; i++) {
-            if (send(client_list[i],&snapshot , sizeof(snapshot), 0) < 0) {
-                printf("Klient się rozłączył. \n");
-                close(client_list[i]);
-                remove_client(client_list[i]);
-                i--;
+            // first sending number of players (to calculate next struct size)
+            if (send(client_list[i], &num_players, sizeof(int), 0) < 0) {
+                perror("Error sending player count");
+                continue;
+            }
+
+            // next sending players positions
+            for (int j = 0; j < num_players; j++) {
+                int pos_data[2] = {gs.players[j].pos_x, gs.players[j].pos_y};
+                if (send(client_list[i], pos_data, sizeof(pos_data), 0) < 0) {
+                    perror("Error sending player positions");
+                    continue;
+                }
             }
         }
         pthread_mutex_unlock(&cl_mutex);
