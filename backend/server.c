@@ -1,5 +1,6 @@
 #include "../common/gamestate.h"
 #include "../common/player_move.h"
+#include "../common/map.h"
 #include "state_updater.h"
 #include <netinet/in.h>
 #include <stdio.h>
@@ -20,10 +21,16 @@ GameState gs;
 int client_list[MAX_PLAYERS];
 int num_clients = 0;
 
+void cleanup_map(Map* map) {
+    for (int y = 0; y < map->height; y++) {
+        free(map->tile_arr[y]);
+    }
+    free(map->tile_arr);
+}
+
 void add_client(int client_socket){
   pthread_mutex_lock(&cl_mutex);
   if (num_clients < MAX_PLAYERS) {
-        // sending specific data to client when connected
         client_list[num_clients] = client_socket;
 
         gs.players[num_clients].id = num_clients;
@@ -32,8 +39,21 @@ void add_client(int client_socket){
         gs.num_players = num_clients + 1;
 
         int player_id = num_clients;
+        
+        // sending player id
         send(client_socket, &player_id, sizeof(player_id), 0);
         
+        // sending map dimensions
+        send(client_socket, &gs.map.width, sizeof(int), 0);
+        send(client_socket, &gs.map.height, sizeof(int), 0);
+
+        // sending tiles
+        for (int y = 0; y < gs.map.height; y++) {
+            for (int x = 0; x < gs.map.width; x++) {
+                send(client_socket, &gs.map.tile_arr[y][x], sizeof(Tile), 0);
+            }
+        }
+
         num_clients++;
     }
   else{
@@ -70,9 +90,13 @@ void *game_loop(void *arg) {
 
             // next sending players positions
             for (int j = 0; j < num_players; j++) {
-                int pos_data[2] = {gs.players[j].pos_x, gs.players[j].pos_y};
-                if (send(client_list[i], pos_data, sizeof(pos_data), 0) < 0) {
-                    perror("Error sending player positions");
+                int player_data[3] = {
+                    gs.players[j].id, 
+                    gs.players[j].pos_x, 
+                    gs.players[j].pos_y
+                };
+                if (send(client_list[i], player_data, sizeof(player_data), 0) < 0) {
+                    perror("Error sending player data");
                     continue;
                 }
             }
@@ -106,6 +130,8 @@ void* client_handler(void* arg){
 
 int main()
 {
+  gs.map = initialize_map_from_file("lvl1.txt", 40);
+
   socklen_t clilen;
   // we create a socket that works in IPv4 family - AF_INET
   // we also declare that we will be reading information in stream - SOCK_STREAM
@@ -185,5 +211,6 @@ int main()
   }
   free(client_socket);
   close(server_socket);
+  cleanup_map(&gs.map);
   return 0;
 }

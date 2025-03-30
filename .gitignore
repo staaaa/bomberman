@@ -6,3 +6,6 @@ build/*
 =======
 build/*
 >>>>>>> feat/add-cmake
+venv/
+.idea/
+__pycache__/

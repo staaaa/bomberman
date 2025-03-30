@@ -11,6 +11,7 @@ find_package(Curses REQUIRED)
 add_executable(server
     backend/server.c
     backend/state_updater.c
+    common/map.c
 )
 
 target_include_directories(server PRIVATE

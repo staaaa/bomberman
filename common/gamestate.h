@@ -18,6 +18,7 @@ typedef struct Player{
 typedef struct GameState {
     int num_players;
     Player players[MAX_PLAYERS];
+    Map map;
 } GameState;
 
 #endif

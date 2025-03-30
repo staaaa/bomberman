@@ -1,14 +1,7 @@
-import pygame
 import socket
 import struct
 import threading
-
-SERVER_IP = "127.0.0.1"
-SERVER_PORT = 50000
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
-PLAYER_SPEED = 5
-
-IDLE, PLACED_BOMB, MOVED = 0, 1, 2
+from consts import GRID_SIZE
 
 class Client:
     def __init__(self, server_ip, server_port):
@@ -17,9 +10,37 @@ class Client:
         self.running = True
         self.players = []
 
-        self.player_id = struct.unpack("i", self.sock.recv(4))[0]  
+        self.player_id = struct.unpack("i", self.sock.recv(4))[0]
+        self.tiles = self.get_tiles_from_server()
 
+        self.SCREEN_HEIGHT = len(self.tiles) * GRID_SIZE
+        self.SCREEN_WIDTH = len(self.tiles[0]) * GRID_SIZE
+
+        self.lock = threading.Lock()
         threading.Thread(target=self.receive_game_state, daemon=True).start()
+
+    def get_tiles_from_server(self):
+        width = struct.unpack("i", self.sock.recv(4))[0]
+        height = struct.unpack("i", self.sock.recv(4))[0]
+
+        tiles = [[None for _ in range(width)] for _ in range(height)]
+
+        for y in range(height):
+            for x in range(width):
+                tile_data = self.sock.recv(12)
+                if len(tile_data) < 12:
+                    raise ConnectionError("Incomplete tile data received")
+
+                tile_x, tile_y, tile_type = struct.unpack("iii", tile_data)
+
+                if tile_x != x or tile_y != y:
+                    raise ValueError(f"Unexpected tile coordinates: expected ({x},{y}), got ({tile_x},{tile_y})")
+
+                tiles[tile_y][tile_x] = {
+                    'type': tile_type,
+                }
+
+        return tiles
 
     def send_move(self, player_id, move_type, x, y):
         if self.sock:
@@ -39,16 +60,20 @@ class Client:
                     break
 
                 num_players = struct.unpack("i", data)[0]
-                self.players = []
 
-                for _ in range(num_players):
-                    data = self.sock.recv(8)
-                    if not data or len(data) < 8:
-                        print("Incomplete player data")
-                        break
+                with self.lock:
+                    new_players = []
 
-                    px, py = struct.unpack("ii", data)
-                    self.players.append((px, py))
+                    for _ in range(num_players):
+                        data = self.sock.recv(12)
+                        if not data or len(data) < 12:
+                            print("Incomplete player data")
+                            break
+
+                        id, px, py = struct.unpack("iii", data)
+                        new_players.append((id, px, py))
+
+                    self.players = new_players
 
             except Exception as e:
                 print(f"Error receiving game state: {e}")
@@ -57,38 +82,6 @@ class Client:
         self.running = False
         self.sock.close()
 
-pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-clock = pygame.time.Clock()
-client = Client(SERVER_IP, SERVER_PORT)
-
-running = True
-player_x, player_y = 100, 100
-
-while running:
-    screen.fill((0, 0, 0))
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    keys = pygame.key.get_pressed()
-    dx, dy = 0, 0
-
-    if keys[pygame.K_LEFT]: dx = -PLAYER_SPEED
-    if keys[pygame.K_RIGHT]: dx = PLAYER_SPEED
-    if keys[pygame.K_UP]: dy = -PLAYER_SPEED
-    if keys[pygame.K_DOWN]: dy = PLAYER_SPEED
-
-    if dx or dy:
-        player_x += dx
-        player_y += dy
-        client.send_move(client.player_id, MOVED, player_x, player_y)
-
-    for px, py in client.players:
-        pygame.draw.rect(screen, (0, 255, 0), (px, py, 20, 20))  
-
-    pygame.display.flip()
-    clock.tick(60)
-
-pygame.quit()
+    def get_players(self):
+        with self.lock:
+            return self.players.copy()
