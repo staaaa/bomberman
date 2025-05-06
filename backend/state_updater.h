@@ -4,5 +4,6 @@
 #include "../common/gamestate.h"
 #include "../common/player_move.h"
 void update_gamestate(PlayerMove* move, GameState *gs);
+void update_bombs(GameState *gs);
 
 #endif

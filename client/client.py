@@ -43,7 +43,7 @@ class Client:
         return tiles
 
     def send_move(self, player_id, move_type, x, y):
-        if self.sock:
+        if self.sock and self.running:
             try:
                 data = struct.pack("iiii", player_id, move_type, x, y)
                 self.sock.sendall(data)
@@ -65,22 +65,34 @@ class Client:
                     new_players = []
 
                     for _ in range(num_players):
-                        data = self.sock.recv(12)
-                        if not data or len(data) < 12:
+                        data = self.sock.recv(16)  # Changed from 12 to 16 to include alive status
+                        if not data or len(data) < 16:
                             print("Incomplete player data")
                             break
 
-                        id, px, py = struct.unpack("iii", data)
-                        new_players.append((id, px, py))
+                        id, px, py, alive = struct.unpack("iiii", data)
+                        new_players.append((id, px, py, alive))
 
                     self.players = new_players
+                    
+                    # Receive updated map
+                    for y in range(len(self.tiles)):
+                        for x in range(len(self.tiles[0])):
+                            tile_data = self.sock.recv(12)
+                            if len(tile_data) < 12:
+                                print("Incomplete tile data received")
+                                self.running = False
+                                break
+                                
+                            tile_x, tile_y, tile_type = struct.unpack("iii", tile_data)
+                            self.tiles[tile_y][tile_x]['type'] = tile_type
 
             except Exception as e:
                 print(f"Error receiving game state: {e}")
                 break
 
         self.running = False
-        self.sock.close()
+        self.sock.close() 
 
     def get_players(self):
         with self.lock:

@@ -34,8 +34,17 @@ void add_client(int client_socket){
         client_list[num_clients] = client_socket;
 
         gs.players[num_clients].id = num_clients;
-        gs.players[num_clients].pos_x = 100;
-        gs.players[num_clients].pos_y = 100;
+        gs.players[num_clients].pos_x = 0;
+        gs.players[num_clients].pos_y = 0;
+        gs.players[num_clients].max_bomb_num = 3;
+        gs.players[num_clients].curr_bomb_num = 0;
+        gs.players[num_clients].alive = 1;
+
+        // Initialize bombs
+        for (int j = 0; j < gs.players[num_clients].max_bomb_num; j++) {
+            gs.players[num_clients].bombs[j].active = 0;
+        }
+
         gs.num_players = num_clients + 1;
 
         int player_id = num_clients;
@@ -78,6 +87,11 @@ void *game_loop(void *arg) {
     (void)arg; // argument nie jest używany
     
     while (1) {
+        // Update bombs and explosions every cycle
+        pthread_mutex_lock(&gs_mutex);
+        update_bombs(&gs);
+        pthread_mutex_unlock(&gs_mutex);
+        
         pthread_mutex_lock(&cl_mutex);
         int num_players = gs.num_players;
 
@@ -90,14 +104,25 @@ void *game_loop(void *arg) {
 
             // next sending players positions
             for (int j = 0; j < num_players; j++) {
-                int player_data[3] = {
+                int player_data[4] = {
                     gs.players[j].id, 
                     gs.players[j].pos_x, 
-                    gs.players[j].pos_y
+                    gs.players[j].pos_y,
+                    gs.players[j].alive
                 };
                 if (send(client_list[i], player_data, sizeof(player_data), 0) < 0) {
                     perror("Error sending player data");
                     continue;
+                }
+            }
+            
+            // Send map updates - send the full map each time
+            for (int y = 0; y < gs.map.height; y++) {
+                for (int x = 0; x < gs.map.width; x++) {
+                    if (send(client_list[i], &gs.map.tile_arr[y][x], sizeof(Tile), 0) < 0) {
+                        perror("Error sending map data");
+                        break;
+                    }
                 }
             }
         }
@@ -107,6 +132,7 @@ void *game_loop(void *arg) {
     }
     return NULL;
 }
+
 
 void* client_handler(void* arg){
   int client_socket = *(int*) arg;

@@ -6,6 +6,8 @@ enum TileType{
   EMPTY,
   BREAKABLE_WALL,
   UNBREAKABLE_WALL,
+  BOMB,
+  EXPLOSION
 };
 
 typedef struct Tile{

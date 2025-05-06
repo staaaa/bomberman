@@ -3,6 +3,10 @@ SERVER_PORT = 50000
 MOVE_DELAY = 100 # ms
 GRID_SIZE = 40
 
+BOMB_COLOR = (0, 0, 128)  # Dark blue for bombs
+EXPLOSION_COLOR = (255, 165, 0)  # Orange for explosions
+BOMB_DELAY = 500 
+
 COLORS = [(0,255,0), (255, 0, 0), (0, 0, 255), (0, 0, 0), (255, 255, 255)]
 
 PLAYER_SPEED = GRID_SIZE
