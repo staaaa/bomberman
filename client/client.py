@@ -65,13 +65,13 @@ class Client:
                     new_players = []
 
                     for _ in range(num_players):
-                        data = self.sock.recv(16)  # Changed from 12 to 16 to include alive status
-                        if not data or len(data) < 16:
+                        data = self.sock.recv(20)  # Changed from 12 to 16 to include alive status
+                        if not data or len(data) < 20:
                             print("Incomplete player data")
                             break
 
-                        id, px, py, alive = struct.unpack("iiii", data)
-                        new_players.append((id, px, py, alive))
+                        id, px, py, alive, points = struct.unpack("iiiii", data)
+                        new_players.append((id, px, py, alive, points))
 
                     self.players = new_players
                     

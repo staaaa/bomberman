@@ -7,11 +7,15 @@ class Game:
         pygame.init()
         self.client = Client(SERVER_IP, SERVER_PORT)
         self.screen = pygame.display.set_mode((self.client.SCREEN_WIDTH, self.client.SCREEN_HEIGHT))
+        pygame.display.set_caption("Bomberman")
         self.clock = pygame.time.Clock()
         self.running = True
+        self.font = pygame.font.SysFont(None, 36)  # Add font for text
+        self.player_dead = False  # Track if player is dead
 
         self.player_x = 0
         self.player_y = 0
+        self.player_points = 0  # Track player points
 
         self.last_move_time = pygame.time.get_ticks()
         self.last_bomb_time = pygame.time.get_ticks()
@@ -33,7 +37,7 @@ class Game:
         players = self.client.get_players()
         player_alive = False
         
-        for id, _, _, alive in players:
+        for id, _, _, alive, points in players:
             if id == self.client.player_id and alive:
                 player_alive = True
                 break
@@ -63,6 +67,30 @@ class Game:
                     self.client.send_move(self.client.player_id, MOVED, self.player_x, self.player_y)
                     self.last_move_time = self.current_time
 
+    def draw_points(self):
+        # Draw player points in upper right corner
+        points_text = self.font.render(f"Points: {self.player_points}", True, (160, 0, 0))
+        self.screen.blit(points_text, (self.client.SCREEN_WIDTH - 150, 10))
+    
+    def draw_death_screen(self):
+        # Create semi-transparent overlay
+        overlay = pygame.Surface((self.client.SCREEN_WIDTH, self.client.SCREEN_HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+        
+        # Draw game over text
+        game_over = self.font.render("GAME OVER", True, (255, 0, 0))
+        points_text = self.font.render(f"Final Score: {self.player_points}", True, (255, 255, 255))
+        restart_text = self.font.render("Press R to restart or Q to quit", True, (255, 255, 255))
+        
+        self.screen.blit(game_over, (self.client.SCREEN_WIDTH//2 - game_over.get_width()//2, 
+                                     self.client.SCREEN_HEIGHT//2 - 60))
+        self.screen.blit(points_text, (self.client.SCREEN_WIDTH//2 - points_text.get_width()//2, 
+                                      self.client.SCREEN_HEIGHT//2))
+        self.screen.blit(restart_text, (self.client.SCREEN_WIDTH//2 - restart_text.get_width()//2, 
+                                       self.client.SCREEN_HEIGHT//2 + 60))
+        
     def draw_tiles(self):
         for y in range(len(self.client.tiles)):
             for x in range(len(self.client.tiles[0])):
@@ -95,30 +123,53 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                    
+                # Handle restart and quit from death screen
+                if self.player_dead and event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                        self.client.send_move(self.client.player_id, RESTART, 0, 0)
+                        pass
+                    elif event.key == pygame.K_q:
+                        self.running = False
 
             keys = pygame.key.get_pressed()
             self.current_time = pygame.time.get_ticks()
             
-            # Only move if player is alive
-            if self.current_time - self.last_move_time >= MOVE_DELAY:
-                self.move_player(keys)
-                
-            # Handle bomb placement
-            if keys[pygame.K_SPACE] and self.current_time - self.last_bomb_time >= BOMB_DELAY:
-                self.client.send_move(self.client.player_id, PLACED_BOMB, self.player_x, self.player_y)
-                self.last_bomb_time = self.current_time
-
-            # Draw player if alive
+            # Check player alive status
             players = self.client.get_players()
-            for id, px, py, alive in players:
-                if alive:
-                    if id == self.client.player_id:
-                        # Update our position from server
+            self.player_dead = True  # Assume dead until proven alive
+            
+            for id, px, py, alive, points in players:
+                if id == self.client.player_id:
+                    if alive:
+                        self.player_dead = False
+                        self.player_points = points  # Update points
                         self.player_x = px
                         self.player_y = py
-                        pygame.draw.rect(self.screen, COLORS[id % len(COLORS)], (px, py, GRID_SIZE, GRID_SIZE))
                     else:
-                        pygame.draw.rect(self.screen, COLORS[id % len(COLORS)], (px, py, GRID_SIZE, GRID_SIZE))
+                        self.player_dead = True
+                        self.player_points = points  # Keep final score
+            
+            # Only allow movement and bomb placement if alive
+            if not self.player_dead:
+                if self.current_time - self.last_move_time >= MOVE_DELAY:
+                    self.move_player(keys)
+                    
+                if keys[pygame.K_SPACE] and self.current_time - self.last_bomb_time >= BOMB_DELAY:
+                    self.client.send_move(self.client.player_id, PLACED_BOMB, self.player_x, self.player_y)
+                    self.last_bomb_time = self.current_time
+
+            # Draw players
+            for id, px, py, alive, points in players:
+                if alive:
+                    pygame.draw.rect(self.screen, COLORS[id % len(COLORS)], (px, py, GRID_SIZE, GRID_SIZE))
+
+            # Draw points counter
+            self.draw_points()
+            
+            # Draw death screen if player is dead
+            if self.player_dead:
+                self.draw_death_screen()
 
             pygame.display.flip()
             self.clock.tick(60)

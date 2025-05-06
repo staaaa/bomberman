@@ -4,7 +4,8 @@
 enum MoveType {
     IDLE,
     PLACED_BOMB,
-    MOVED
+    MOVED,
+    RESTART
 };
 
 typedef struct PlayerMove {

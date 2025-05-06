@@ -39,6 +39,7 @@ void add_client(int client_socket){
         gs.players[num_clients].max_bomb_num = 3;
         gs.players[num_clients].curr_bomb_num = 0;
         gs.players[num_clients].alive = 1;
+        gs.players[num_clients].points = 0;
 
         // Initialize bombs
         for (int j = 0; j < gs.players[num_clients].max_bomb_num; j++) {
@@ -104,11 +105,12 @@ void *game_loop(void *arg) {
 
             // next sending players positions
             for (int j = 0; j < num_players; j++) {
-                int player_data[4] = {
+                int player_data[5] = {
                     gs.players[j].id, 
                     gs.players[j].pos_x, 
                     gs.players[j].pos_y,
-                    gs.players[j].alive
+                    gs.players[j].alive,
+                    gs.players[j].points,
                 };
                 if (send(client_list[i], player_data, sizeof(player_data), 0) < 0) {
                     perror("Error sending player data");

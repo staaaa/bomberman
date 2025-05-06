@@ -68,9 +68,19 @@ void explode_bomb(GameState *gs, Bomb *bomb) {
             // Destroy breakable walls or update to explosion
             if (gs->map.tile_arr[new_y][new_x].type == BREAKABLE_WALL) {
                 gs->map.tile_arr[new_y][new_x].type = EMPTY;
+
+                // Award 1 point to the bomb owner
+                for (int p = 0; p < gs->num_players; p++) {
+                    if (gs->players[p].id == bomb->owner_id) {
+                        gs->players[p].points++;
+                        break;
+                    }
+                }
             } else {
                 gs->map.tile_arr[new_y][new_x].type = EXPLOSION;
             }
+
+
             
             // Check if any player is in explosion range
             for (int i = 0; i < gs->num_players; i++) {
@@ -79,7 +89,15 @@ void explode_bomb(GameState *gs, Bomb *bomb) {
                 
                 if (player_grid_x == new_x && player_grid_y == new_y && gs->players[i].alive) {
                     gs->players[i].alive = 0;  // Kill player
+                    // Award 3 points to the bomb owner
+                    for (int p = 0; p < gs->num_players; p++) {
+                        if (gs->players[p].id == bomb->owner_id && p != i) {
+                            gs->players[p].points += 3;
+                            break;
+                        }
+                    }
                 }
+
             }
         }
     }
@@ -142,13 +160,43 @@ void update_bombs(GameState *gs) {
 
 
 void update_gamestate(PlayerMove *move, GameState *gs) {
-    for (int i = 0; i < gs->num_players; i++) {
-        if (gs->players[i].id == move->player_id && gs->players[i].alive) {
-            if (move->move_type == MOVED) {
-                gs->players[i].pos_x = move->pos_x;
-                gs->players[i].pos_y = move->pos_y;
-            } else if (move->move_type == PLACED_BOMB) {
-                place_bomb(gs, move->player_id, move->pos_x, move->pos_y);
+    if (move->move_type == RESTART) {
+        for (int i = 0; i < gs->num_players; i++) {
+            if (gs->players[i].id == move->player_id) {
+                // Reset player state
+                gs->players[i].alive = 1;
+                gs->players[i].pos_x = 0;
+                gs->players[i].pos_y = 0;
+                gs->players[i].points = 0;
+                gs->players[i].curr_bomb_num = 0;
+                
+                // Deactivate all bombs and clear map tiles
+                for (int j = 0; j < gs->players[i].max_bomb_num; j++) {
+                    Bomb *bomb = &gs->players[i].bombs[j];
+                    if (bomb->active) {
+                        if (bomb->fuse_time > 0) { // Bomb is in fuse phase
+                            // Clear the bomb tile
+                            if (bomb->pos_x >= 0 && bomb->pos_x < gs->map.width &&
+                                bomb->pos_y >= 0 && bomb->pos_y < gs->map.height) {
+                                gs->map.tile_arr[bomb->pos_y][bomb->pos_x].type = EMPTY;
+                            }
+                        }
+                        bomb->active = 0;
+                    }
+                }
+                break;
+            }
+        }
+    } else {
+        // Existing code for MOVED and PLACED_BOMB
+        for (int i = 0; i < gs->num_players; i++) {
+            if (gs->players[i].id == move->player_id && gs->players[i].alive) {
+                if (move->move_type == MOVED) {
+                    gs->players[i].pos_x = move->pos_x;
+                    gs->players[i].pos_y = move->pos_y;
+                } else if (move->move_type == PLACED_BOMB) {
+                    place_bomb(gs, move->player_id, move->pos_x, move->pos_y);
+                }
             }
         }
     }

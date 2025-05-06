@@ -13,6 +13,7 @@ typedef struct Player{
     int pos_x;
     int pos_y;
     int alive;
+    int points;
     Bomb bombs[3]; // Assuming max 3 bombs per player
 } Player;
 
