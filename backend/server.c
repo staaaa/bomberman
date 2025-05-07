@@ -11,7 +11,7 @@
 #include <pthread.h>
 
 #define PORT 50000
-#define MAX_PLAYERS 10
+#define MAX_PLAYERS 4
 #define BUFFER_SIZE 1024
 
 pthread_mutex_t gs_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -34,8 +34,7 @@ void add_client(int client_socket){
         client_list[num_clients] = client_socket;
 
         gs.players[num_clients].id = num_clients;
-        gs.players[num_clients].pos_x = 0;
-        gs.players[num_clients].pos_y = 0;
+        assign_player_spawn(&gs, num_clients);
         gs.players[num_clients].max_bomb_num = 3;
         gs.players[num_clients].curr_bomb_num = 0;
         gs.players[num_clients].alive = 1;

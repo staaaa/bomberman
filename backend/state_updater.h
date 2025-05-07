@@ -5,5 +5,6 @@
 #include "../common/player_move.h"
 void update_gamestate(PlayerMove* move, GameState *gs);
 void update_bombs(GameState *gs);
+void assign_player_spawn(GameState *gs, int player_id);
 
 #endif

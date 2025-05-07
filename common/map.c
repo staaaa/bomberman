@@ -20,7 +20,6 @@ Map initialize_map_from_file(const char* filename, int grid_size) {
             width++;
             token = strtok(NULL, " \n");
         }
-        height++;
     }
     
     while (fgets(buffer, sizeof(buffer), file)) {

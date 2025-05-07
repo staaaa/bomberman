@@ -4,7 +4,7 @@
 #include "bomb.h"
 #include "map.h"
 
-#define MAX_PLAYERS 10
+#define MAX_PLAYERS 4
 
 typedef struct Player{
     int id;

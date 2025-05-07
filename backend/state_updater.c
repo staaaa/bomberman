@@ -5,6 +5,34 @@
 #define BOMB_FUSE_TIME 60           // Time before explosion in game ticks
 #define EXPLOSION_DURATION 30       // Time explosion stays visible
 
+void assign_player_spawn(GameState* gs, int player_id) {
+    int map_width = gs->map.width;
+    int map_height = gs->map.height;
+
+    switch (player_id) {
+        case 0:
+            gs->players[player_id].pos_x = 0;
+            gs->players[player_id].pos_y = 0;
+            break;
+        case 1:
+            gs->players[player_id].pos_x = map_width * 40 - 40;
+            gs->players[player_id].pos_y = 0;
+            break;
+        case 2:
+            gs->players[player_id].pos_x = 0;
+            gs->players[player_id].pos_y = map_height * 40 - 40;
+            break;
+        case 3:
+            gs->players[player_id].pos_x = map_width * 40 - 40;
+            gs->players[player_id].pos_y = map_height * 40 - 40;
+            break;
+        default:
+            gs->players[player_id].pos_x = 0;
+            gs->players[player_id].pos_y = 0;
+            break;
+    }
+}
+
 void place_bomb(GameState *gs, int player_id, int x, int y) {
     for (int i = 0; i < gs->num_players; i++) {
         if (gs->players[i].id == player_id && gs->players[i].alive) {
@@ -165,8 +193,7 @@ void update_gamestate(PlayerMove *move, GameState *gs) {
             if (gs->players[i].id == move->player_id) {
                 // Reset player state
                 gs->players[i].alive = 1;
-                gs->players[i].pos_x = 0;
-                gs->players[i].pos_y = 0;
+                assign_player_spawn(gs, i);
                 gs->players[i].points = 0;
                 gs->players[i].curr_bomb_num = 0;
                 
