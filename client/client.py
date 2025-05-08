@@ -10,7 +10,7 @@ class Client:
         self.running = True
         self.players = []
 
-        self.player_id = struct.unpack("i", self.sock.recvall(self.sock, 4))[0]
+        self.player_id = struct.unpack("i", self.recvall(self.sock, 4))[0]
         self.tiles = self.get_tiles_from_server()
 
         self.SCREEN_HEIGHT = len(self.tiles) * GRID_SIZE
