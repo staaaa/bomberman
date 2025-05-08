@@ -10,7 +10,7 @@ class Client:
         self.running = True
         self.players = []
 
-        self.player_id = struct.unpack("i", self.recvall(self.sock, 4))[0]
+        self.player_id = struct.unpack("i", self.recvall(4))[0]
         self.tiles = self.get_tiles_from_server()
 
         self.SCREEN_HEIGHT = len(self.tiles) * GRID_SIZE
@@ -19,10 +19,10 @@ class Client:
         self.lock = threading.Lock()
         threading.Thread(target=self.receive_game_state, daemon=True).start()
 
-    def recvall(sock, n):
+    def recvall(self, n):
         data = b''
         while len(data) < n:
-            packet = sock.recv(n - len(data))
+            packet = self.sock.recv(n - len(data))
             if not packet:
                 return None
             
@@ -31,15 +31,15 @@ class Client:
         return data
 
     def get_tiles_from_server(self):
-        width = struct.unpack("i", self.recvall(self.sock, 4))[0]
-        height = struct.unpack("i", self.recvall(self.sock, 4))[0]
+        width = struct.unpack("i", self.recvall(4))[0]
+        height = struct.unpack("i", self.recvall(4))[0]
 
         tiles = [[None for _ in range(width)] for _ in range(height)]
 
         for y in range(height):
             for x in range(width):
-                tile_data = self.recvall(self.sock, 12) 
-                if len(tile_data) is None:
+                tile_data = self.recvall(12) 
+                if tile_data is None:
                     raise ConnectionError("Incomplete tile data received")
 
                 tile_x, tile_y, tile_type = struct.unpack("iii", tile_data)
@@ -65,12 +65,12 @@ class Client:
     def receive_game_state(self):
         while self.running:
             try:
-                data = self.recvall(self.sock, 4)
+                data = self.recvall(4)
                 if data is None:
                     print("Connection lost or incomplete data")
                     break
 
-                raw = self.recvall(self.sock, 4)
+                raw = self.recvall(4)
                 if raw is None: break
                 num_players = struct.unpack("i", raw)[0]
 
@@ -78,7 +78,7 @@ class Client:
                     new_players = []
 
                     for _ in range(num_players):
-                        data = self.recvall(self.sock, 20)  # Changed from 12 to 16 to include alive status
+                        data = self.recvall(20)  # Changed from 12 to 16 to include alive status
                         if data is None:
                             print("Incomplete player data")
                             break
@@ -91,7 +91,7 @@ class Client:
                     # Receive updated map
                     for y in range(len(self.tiles)):
                         for x in range(len(self.tiles[0])):
-                            raw = self.recvall(self.sock, 12)
+                            raw = self.recvall(12)
                             if raw is None:
                                 print("Incomplete tile data received")
                                 self.running = False
