@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package bomberman;
+
+enum TileType {
+  EMPTY = 0;
+  BREAKABLE_WALL = 1;
+  UNBREAKABLE_WALL = 2;
+  BOMB = 3;
+  EXPLOSION = 4;
+}
+
+enum MoveType {
+  IDLE = 0;
+  PLACED_BOMB = 1;
+  MOVED = 2;
+  RESTART = 3;
+}
+
+message Tile {
+  int32 x = 1;
+  int32 y = 2;
+  TileType type = 3;
+}
+
+message Map {
+  int32 width = 1;
+  int32 height = 2;
+  repeated Tile tiles = 3;
+}
+
+message Player {
+  int32 id = 1;
+  int32 pos_x = 2;
+  int32 pos_y = 3;
+  bool alive = 4;
+  int32 points = 5;
+}
+
+message GameState {
+  int32 num_players = 1;
+  repeated Player players = 2;
+  Map map = 3;
+}
+
+message PlayerMove {
+  int32 player_id = 1;
+  MoveType move_type = 2;
+  int32 pos_x = 3;
+  int32 pos_y = 4;
+}
+
+message InitialState {
+  int32 player_id = 1;
+  Map map = 2;
+}

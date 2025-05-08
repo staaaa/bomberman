@@ -4,20 +4,28 @@ SERVER_DIR = backend
 COMMON_DIR = common
 CLIENT_DIR = client
 TARGET = server.out
+PROTOC = protoc
+PROTOC_C = protoc-c
 
-PHONY: run_server run_client
+.PHONY: all proto run_server run_client clean
 
-run_server:
+all: proto run_server
+
+proto:
+	$(PROTOC) --c_out=$(SERVER_DIR) --proto_path=. game.proto
+	$(PROTOC) --python_out=$(CLIENT_DIR) --proto_path=. game.proto
+
+run_server: proto
 	cd $(SERVER_DIR) && \
-	$(COMPILER) $(SERVER_FLAGS) -o $(TARGET) server.c state_updater.c ../common/map.c && \
+	$(COMPILER) $(SERVER_FLAGS) -o $(TARGET) server.c state_updater.c ../common/map.c game.pb-c.c -lprotobuf-c -pthread && \
 	./$(TARGET) && \
 	cd ..
 
-run_client:
+run_client: proto
 	python -m venv venv && \
 	source venv/bin/activate && \
 	pip install -r requirements.txt && \
 	python $(CLIENT_DIR)/game.py
 
 clean:
-	rm -rf $(SERVER_DIR)/*.out venv/ $(CLIENT_DIR)/__pycache__
+	rm -rf $(SERVER_DIR)/*.out $(SERVER_DIR)/*.pb-c.* venv/ $(CLIENT_DIR)/__pycache__/ $(CLIENT_DIR)/*.py[cod] $(CLIENT_DIR)/*_pb2.py
