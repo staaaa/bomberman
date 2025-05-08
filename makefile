@@ -23,7 +23,8 @@ run_server: proto
 
 run_client: proto
 	python -m venv venv && \
-	source venv/bin/activate && \
+	. venv/bin/activate && \
+	pip install protobuf && \
 	pip install -r requirements.txt && \
 	python $(CLIENT_DIR)/game.py
 
