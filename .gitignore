@@ -1,11 +1,6 @@
 .DS_Store
-*.out
+**/*.out
 .vscode/
-<<<<<<< HEAD
-build/*
-=======
-build/*
->>>>>>> feat/add-cmake
 venv/
 .idea/
 __pycache__/
